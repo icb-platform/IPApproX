@@ -44,6 +44,7 @@ def load_ips_list(filename):
     # get a list of all IPs that we are interested in from ips_list.yml
     with open(filename, "rb") as f:
         ips_list = ordered_load(f, yaml.SafeLoader)
+
     ips = []
     for i in ips_list.keys():
         commit = ips_list[i]['commit']
@@ -61,7 +62,9 @@ def load_ips_list(filename):
             alternatives = list(set.union(set(ips_list[i]['alternatives']), set([name])))
         except KeyError:
             alternatives = None
-        ips.append({'name': name, 'commit': commit, 'group': group, 'path': path, 'domain': domain, 'alternatives': alternatives })
+
+        defines = ips_list[i].get('defines', None)
+        ips.append({'name': name, 'commit': commit, 'group': group, 'path': path, 'domain': domain, 'alternatives': alternatives, 'defines': defines })
     return ips
 
 def store_ips_list(filename, ips):
@@ -92,7 +95,7 @@ class IPDatabase(object):
             for ip in self.ip_list:
                 ip_full_name = ip['name']
                 ip_full_path = "%s/%s/%s/src_files.yml" % (ips_list_path, ips_dir, ip['path'])
-                self.import_yaml(ip_full_name, ip_full_path, ip['path'], domain=ip['domain'], alternatives=ip['alternatives'])
+                self.import_yaml(ip_full_name, ip_full_path, ip['path'], domain=ip['domain'], alternatives=ip['alternatives'], defines=ip['defines'])
             sub_ip_check_list = []
             for i in self.ip_dic.keys():
                 sub_ip_check_list.extend(self.ip_dic[i].sub_ips.keys())
@@ -103,7 +106,7 @@ class IPDatabase(object):
                 for el in blacklist:
                     print(tcolors.WARNING + "  %s" % el + tcolors.ENDC)
 
-    def import_yaml(self, ip_name, filename, ip_path, domain=None, alternatives=None):
+    def import_yaml(self, ip_name, filename, ip_path, domain=None, alternatives=None, defines=None):
         if not os.path.exists(os.path.dirname(filename)):
             print(tcolors.ERROR + "ERROR: ip '%s' has not src_files.yml file. File path: %s" % (ip_name, filename) + tcolors.ENDC)
             sys.exit(1)
@@ -115,7 +118,7 @@ class IPDatabase(object):
             return
 
         try:
-            self.ip_dic[ip_name] = IPConfig(ip_name, ip_dic, ip_path, self.ips_dir, self.vsim_dir, domain=domain, alternatives=alternatives)
+            self.ip_dic[ip_name] = IPConfig(ip_name, ip_dic, ip_path, self.ips_dir, self.vsim_dir, domain=domain, alternatives=alternatives, defines=defines)
         except KeyError:
             print(tcolors.WARNING + "WARNING: Skipped ip '%s' with %s config file as it seems it is already in the ip database." % (ip_name, filename) + tcolors.ENDC)
 

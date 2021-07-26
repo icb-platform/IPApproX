@@ -22,11 +22,12 @@ LEGACY_IPS = [
 ]
 
 class IPConfig(object):
-    def __init__(self, ip_name, ip_dic, ip_path, ips_dir, vsim_dir, domain=None, alternatives=None):
+    def __init__(self, ip_name, ip_dic, ip_path, ips_dir, vsim_dir, domain=None, alternatives=None, defines=None):
         super(IPConfig, self).__init__()
 
         self.domain  = domain
         self.alternatives = alternatives
+        self.defines = defines
         self.ip_name = ip_name
         self.ip_path = ip_path
         self.ips_dir = ips_dir
@@ -54,6 +55,13 @@ class IPConfig(object):
         if self.ip_name in LEGACY_IPS:
             return ""
         vsim_script = VSIM_PREAMBLE % (self.vsim_dir, prepare(self.ip_name), self.ip_path)
+
+        if self.defines:
+           if more_opts and (not m[-1].isspace()):
+               more_opts += ' '
+
+           more_opts += ' '.join(['+define+{}'.format(d) for d in self.defines])
+
         for s in self.sub_ips.keys():
             vsim_script += self.sub_ips[s].export_vsim(abs_path, more_opts, target_tech=target_tech)
         vsim_script += VSIM_POSTAMBLE
